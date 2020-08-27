@@ -16,6 +16,9 @@ interface ProfileDao : BaseDao<Profile> {
   @Query("SELECT * FROM profiles WHERE id = :id")
   fun get(id: Int): Flow<Profile>
 
+  @Query("SELECT * FROM profiles WHERE login = :userName")
+  fun get(userName: String): Flow<Profile>
+
   @Query("SELECT * FROM profiles")
   fun all(): Flow<List<Profile>>
 }
