@@ -3,8 +3,7 @@ package com.kikimore.api
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,12 +26,23 @@ class ApiTest {
   }
 
   @Test
-  fun getCharacterSince() {
+  fun getUsersSince() {
     val since = 0
     runBlocking(Dispatchers.IO) {
-      testSetup.userService().getUsersSince(since)?.also {
+      testSetup.userService().getUsersSince(since).also {
         assertNotNull(it.body())
         assertNotEquals(0, it.body()?.size)
+      }
+    }
+  }
+
+  @Test
+  fun getUserProfile() {
+    val userName = "wycats"
+    runBlocking(Dispatchers.IO) {
+      testSetup.userService().getUserProfile(userName).also {
+        assertNotNull(it.body())
+        assertEquals(userName, it.body()?.login)
       }
     }
   }

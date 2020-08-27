@@ -1,8 +1,10 @@
 package com.kikimore.api.data.remote
 
+import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.data.entities.user.User
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -13,4 +15,7 @@ interface UserService {
 
   @GET("users")
   suspend fun getUsersSince(@Query("since") since: Int): Response<List<User>>
+
+  @GET("users/{userName}")
+  suspend fun getUserProfile(@Path("userName") userName: String): Response<Profile>
 }

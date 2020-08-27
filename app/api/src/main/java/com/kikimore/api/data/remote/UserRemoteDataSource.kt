@@ -7,4 +7,6 @@ package com.kikimore.api.data.remote
 class UserRemoteDataSource(private val userService: UserService) : BaseDataResource() {
 
   suspend fun getUsersSince(since: Int = 0) = getResult { userService.getUsersSince(since) }
+
+  suspend fun getUserProfile(userName: String) = getResult { userService.getUserProfile(userName) }
 }
