@@ -1,13 +1,17 @@
 package com.kikimore.api.data.entities.user
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
 /**
  * Created by: ebaylon.
  * Created on: 27/08/2020.
  */
+@Entity(tableName = "profiles")
 data class Profile(
   val login: String,
+  @PrimaryKey
   val id: Int,
   @SerializedName("node_id") val nodeId: String,
   @SerializedName("avatar_url") val avatarUrl: String,
@@ -26,13 +30,13 @@ data class Profile(
   val type: String,
   @SerializedName("site_admin") val siteAdmin: Boolean,
   val name: String,
-  val company: String,
+  val company: String?,
   val blog: String,
   val location: String,
-  val email: String,
-  val hireable: String,
-  val bio: String,
-  @SerializedName("twitter_username") val twitterUsername: String,
+  val email: String?,
+  val hireable: String?,
+  val bio: String?,
+  @SerializedName("twitter_username") val twitterUsername: String?,
   @SerializedName("public_repos") val publicRepos: Int,
   @SerializedName("public_gists") val publicGists: Int,
   val followers: Int,

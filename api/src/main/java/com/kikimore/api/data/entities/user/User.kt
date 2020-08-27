@@ -1,13 +1,17 @@
 package com.kikimore.api.data.entities.user
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
 /**
  * Created by: ebaylon.
  * Created on: 27/08/2020.
  */
+@Entity(tableName = "users")
 data class User(
   val login: String,
+  @PrimaryKey
   val id: Int,
   @SerializedName("node_id") val nodeId: String,
   @SerializedName("avatar_url") val avatarUrl: String,
