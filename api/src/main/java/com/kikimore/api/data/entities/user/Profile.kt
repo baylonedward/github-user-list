@@ -42,5 +42,6 @@ data class Profile(
   val followers: Int,
   val following: Int,
   @SerializedName("created_at") val createdAt: String,
-  @SerializedName("updated_at") val updatedAt: String
+  @SerializedName("updated_at") val updatedAt: String,
+  val note: String? = null
 )

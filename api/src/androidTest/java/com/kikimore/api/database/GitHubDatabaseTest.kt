@@ -81,7 +81,7 @@ class GitHubDatabaseTest {
   @Test
   fun updateProfileTest() {
     runBlocking(Dispatchers.IO) {
-      val newLocation = "Los Santos"
+      val newNote = "Sample Note"
       val insertedProfile = CompletableDeferred<Profile>()
       launch {
         profileDao.insert(profile)
@@ -92,11 +92,11 @@ class GitHubDatabaseTest {
         }
       }
       launch {
-        val updatedProfile = insertedProfile.await().copy(location = newLocation)
+        val updatedProfile = insertedProfile.await().copy(note = newNote)
         profileDao.update(updatedProfile)
         profileDao.get(updatedProfile.id).collect {
-          assertNotEquals(profile.location, it.location)
-          assertEquals(newLocation, it.location)
+          assertNotEquals(profile.note, it.note)
+          assertEquals(newNote, it.note)
           cancel()
         }
       }
