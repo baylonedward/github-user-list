@@ -10,6 +10,7 @@ import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.profile.ProfileActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -22,17 +23,46 @@ import kotlinx.coroutines.launch
  * Created on: 28/08/2020.
  */
 @ExperimentalCoroutinesApi
+@FlowPreview
 class UserViewModel(private val api: GitHubApi?) : ViewModel() {
 
   private val users = MutableStateFlow<List<UserAndProfile>?>(null)
+  private val filteredUsers = MutableStateFlow<List<UserAndProfile>?>(null)
   private val userAndProfileState = MutableStateFlow<Resource<List<UserAndProfile>>?>(null)
+  private val searchText = MutableStateFlow<String?>(null)
+  private val searchResult = MutableStateFlow<String?>(null)
   private var initialPageSize = 0
   private var currentDelay = 1000L
   private val delayFactor = 2
 
-  private fun getUser(position: Int): User? = users.value?.get(position)?.user
+  init {
+    observeSearch()
+  }
 
-  private fun getProfile(position: Int): Profile? = users.value?.get(position)?.profile
+  private fun observeSearch() {
+    searchText
+      .onEach { word ->
+        if (word == null) return@onEach
+        if (word.isNotEmpty()) {
+          filteredUsers.value = users.value?.filter { userProfile ->
+            val note = userProfile.profile?.note?.toLowerCase() ?: ""
+            val userName = userProfile.user.login.toLowerCase()
+            val finalWord = word.toLowerCase()
+            userName.contains(finalWord, ignoreCase = true) || note.contains(
+              finalWord,
+              ignoreCase = true
+            )
+          }
+        } else {
+          filteredUsers.value = users.value
+        }
+        searchResult.value = word
+      }.launchIn(viewModelScope)
+  }
+
+  private fun getUser(position: Int): User? = filteredUsers.value?.get(position)?.user
+
+  private fun getProfile(position: Int): Profile? = filteredUsers.value?.get(position)?.profile
 
   private suspend fun retryCall(retryMethod: () -> Unit) {
     userAndProfileState.value = Resource.loading()
@@ -50,6 +80,7 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
         it.data?.also { list ->
           if (initialPageSize == 0) initialPageSize = list.size
           users.value = list
+          filteredUsers.value = list
         }
         if (it.status == Resource.Status.ERROR) {
           retryCall(retry)
@@ -74,9 +105,15 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
     }
   }
 
+  fun setSearch(word: String) {
+    searchText.value = word
+  }
+
+  fun getSearchResult() = searchResult
+
   fun getUsersState() = userAndProfileState
 
-  fun getUsersCount() = users.value?.size ?: 0
+  fun getUsersCount() = filteredUsers.value?.size ?: 0
 
   fun getId(position: Int) = getUser(position)?.id
 
