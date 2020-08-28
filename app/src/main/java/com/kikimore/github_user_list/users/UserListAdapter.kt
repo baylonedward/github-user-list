@@ -32,7 +32,7 @@ class UserListAdapter(private val viewModel: UserViewModel) :
       viewModel.getDetails(adapterPosition),
       viewModel.hasNote(adapterPosition),
       viewModel.isFourth(adapterPosition),
-      viewModel.onClick(adapterPosition)
+      viewModel.onClick(adapterPosition, holder.itemView.context)
     )
 
     // if position = end offset we call method to load more data.
