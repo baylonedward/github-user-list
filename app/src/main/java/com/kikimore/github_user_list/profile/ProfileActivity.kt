@@ -35,7 +35,10 @@ class ProfileActivity : AppCompatActivity() {
       when (it.status) {
         Resource.Status.SUCCESS -> {
           isLoading(false)
-          it.data?.also { profile -> setContent(profile) }
+          it.data?.also { profile ->
+            disableNote(false)
+            setContent(profile)
+          }
         }
         Resource.Status.LOADING -> {
           isLoading(true)
@@ -77,6 +80,8 @@ class ProfileActivity : AppCompatActivity() {
     saveButton.setOnClickListener {
       viewModel.saveNote(noteEditText.text.toString())
     }
+    // disable note
+    disableNote(true)
   }
 
   private fun setContent(profile: Profile) {
@@ -99,6 +104,11 @@ class ProfileActivity : AppCompatActivity() {
     blogTextView.text = "Blog: ${profile.blog}"
     // notes
     noteEditText.setText(profile.note)
+  }
+
+  private fun disableNote(bool: Boolean) {
+    noteEditText.isEnabled = !bool
+    saveButton.isEnabled = !bool
   }
 
   private fun isLoading(bool: Boolean = false) {

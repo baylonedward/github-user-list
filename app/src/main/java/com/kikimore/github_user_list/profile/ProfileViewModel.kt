@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.utils.Resource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -29,6 +30,7 @@ class ProfileViewModel(private val api: GitHubApi?, private val userName: String
   }
 
   fun getProfile() {
+    profileState.value = Resource.loading()
     val retry = { getProfile() }
     api?.userRepository()?.getProfile(userName)
       ?.distinctUntilChanged()
@@ -39,7 +41,8 @@ class ProfileViewModel(private val api: GitHubApi?, private val userName: String
         if (it.status == Resource.Status.ERROR) {
           retryCall(retry)
         }
-      }?.launchIn(viewModelScope)
+      }?.flowOn(Dispatchers.IO)
+      ?.launchIn(viewModelScope)
   }
 
   fun getProfileState() = profileState

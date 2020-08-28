@@ -9,14 +9,8 @@ import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.profile.ProfileActivity
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 /**
  * Created by: ebaylon.
@@ -57,7 +51,9 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
           filteredUsers.value = users.value
         }
         searchResult.value = word
-      }.launchIn(viewModelScope)
+      }
+      .flowOn(Dispatchers.IO)
+      .launchIn(viewModelScope)
   }
 
   private fun getUser(position: Int): User? = filteredUsers.value?.get(position)?.user
@@ -85,7 +81,9 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
         if (it.status == Resource.Status.ERROR) {
           retryCall(retry)
         }
-      }?.launchIn(viewModelScope)
+      }
+      ?.flowOn(Dispatchers.IO)
+      ?.launchIn(viewModelScope)
   }
 
   fun loadMoreUsers() {
