@@ -23,4 +23,7 @@ interface UserDao : BaseDao<User> {
   @Transaction
   @Query("SELECT * FROM users")
   fun allWithProfile(): Flow<List<UserAndProfile>>
+
+  @Query("SELECT * FROM users ORDER BY id DESC LIMIT 1")
+  fun getLast(): Flow<User>
 }

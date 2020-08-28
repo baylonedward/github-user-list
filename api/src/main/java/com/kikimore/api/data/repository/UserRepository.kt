@@ -4,7 +4,9 @@ import com.kikimore.api.data.local.ProfileDao
 import com.kikimore.api.data.local.UserDao
 import com.kikimore.api.data.remote.UserRemoteDataSource
 import com.kikimore.api.utils.performGetOperation
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Created by: ebaylon.
@@ -29,4 +31,12 @@ class UserRepository(
     networkCall = { remoteDataSource.getUserProfile(userName) },
     saveCallResult = { profileLocalDataSource.insert(it) }
   )
+
+  suspend fun hasProfileNote(id: Int): Boolean {
+    val hasNotes = CompletableDeferred<Boolean>()
+    hasNotes.complete(profileLocalDataSource.get(id).firstOrNull()?.note != null)
+    return hasNotes.await()
+  }
+
+  suspend fun getLastUser() = userLocalDataSource.getLast().firstOrNull()
 }

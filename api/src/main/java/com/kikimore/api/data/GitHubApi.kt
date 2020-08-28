@@ -39,7 +39,7 @@ class GitHubApi(context: Context) {
   companion object {
     @Volatile
     private var instance: GitHubApi? = null
-    private const val baseUrl = "https://rickandmortyapi.com/api/"
+    private const val baseUrl = "https://api.github.com/"
 
     fun getInstance(application: Application): GitHubApi? {
       if (instance == null) {

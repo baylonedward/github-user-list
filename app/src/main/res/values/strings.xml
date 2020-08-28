@@ -1,3 +1,4 @@
 <resources>
   <string name="app_name">GitHub-User-List</string>
+  <string name="empty_list">No data to show.</string>
 </resources>
