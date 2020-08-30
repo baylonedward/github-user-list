@@ -34,7 +34,6 @@ class ProfileViewModel(private val api: GitHubApi?, private val userName: String
     val retry = { getProfile() }
     api?.userRepository()?.getProfile(userName)
       ?.distinctUntilChanged()
-      ?.retry()
       ?.onEach {
         profileState.value = it
         it.data?.also { data -> profile.value = data }

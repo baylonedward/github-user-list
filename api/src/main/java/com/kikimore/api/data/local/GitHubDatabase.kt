@@ -14,7 +14,7 @@ import com.kikimore.api.data.entities.user.User
 
 @Database(
   entities = [User::class, Profile::class],
-  version = 3,
+  version = 4,
   exportSchema = false
 )
 abstract class GitHubDatabase : RoomDatabase() {
