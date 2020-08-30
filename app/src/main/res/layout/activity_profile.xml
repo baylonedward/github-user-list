@@ -168,6 +168,7 @@
     android:layout_width="0dp"
     android:layout_height="8dp"
     android:indeterminate="true"
+    android:indeterminateTint="@color/colorPrimaryDark"
     android:progressTint="@color/colorPrimaryDark"
     android:scaleY="4"
     app:layout_constraintBottom_toBottomOf="parent"

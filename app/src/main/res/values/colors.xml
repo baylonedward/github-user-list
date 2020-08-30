@@ -12,4 +12,5 @@
   <color name="light_blue">#b7d8eb</color>
   <color name="dark_turquoise">#03b0c3</color>
   <color name="dark_slate_gray">#01383a</color>
+  <color name="placeholder_background">#dddddd</color>
 </resources>

@@ -33,6 +33,11 @@ class UsersActivity : AppCompatActivity() {
     setListAdapter(userListView)
   }
 
+  override fun onResume() {
+    super.onResume()
+    shimmerViewContainer.startShimmer()
+  }
+
   private fun setObservers() {
     viewModel.getUsersState().onEach {
       if (it == null) return@onEach
@@ -48,7 +53,6 @@ class UsersActivity : AppCompatActivity() {
           isLoading(true)
         }
         Resource.Status.ERROR -> {
-          println("Status: ${it.message}")
           isLoading(false)
           it.message?.let { it1 -> Snackbar.make(rootLayout, it1, Snackbar.LENGTH_LONG).show() }
         }
@@ -80,17 +84,16 @@ class UsersActivity : AppCompatActivity() {
   }
 
   private fun isLoading(bool: Boolean = false) {
-    emptyTextView.text = LOADING
     progressBar.visibility = if (bool) View.VISIBLE else View.GONE
   }
 
   private fun hasData(bool: Boolean = false) {
-    emptyTextView.text = NO_DATA
-    emptyTextView.visibility = if (bool) View.INVISIBLE else View.VISIBLE
-  }
-
-  companion object {
-    private const val LOADING = "Loading..."
-    private const val NO_DATA = "No data to show."
+    if (bool) {
+      shimmerViewContainer.stopShimmer()
+      shimmerViewContainer.visibility = View.GONE
+    } else {
+      shimmerViewContainer.startShimmer()
+      shimmerViewContainer.visibility = View.VISIBLE
+    }
   }
 }

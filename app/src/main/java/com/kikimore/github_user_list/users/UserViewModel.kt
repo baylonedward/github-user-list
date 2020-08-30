@@ -71,6 +71,7 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
     val retry = { getUsers() }
     api?.userRepository()?.getUsers()
       ?.distinctUntilChanged()
+      ?.catch { userAndProfileState.value = Resource.error(it.message!!) }
       ?.onEach {
         userAndProfileState.value = it
         it.data?.also { list ->
