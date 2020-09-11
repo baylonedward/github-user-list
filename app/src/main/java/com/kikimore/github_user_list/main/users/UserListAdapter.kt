@@ -4,6 +4,7 @@ import android.graphics.ColorMatrixColorFilter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.kikimore.github_user_list.R
@@ -21,6 +22,8 @@ import kotlinx.coroutines.FlowPreview
 class UserListAdapter(private val viewModel: MainViewModel) :
   RecyclerView.Adapter<UserListAdapter.UserViewHolder>() {
 
+  private var lastPosition = -1
+
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
     val layoutInflater = LayoutInflater.from(parent.context)
     val view = layoutInflater.inflate(R.layout.layout_user_item, parent, false)
@@ -37,6 +40,17 @@ class UserListAdapter(private val viewModel: MainViewModel) :
       viewModel.isFourth(adapterPosition),
       viewModel.onClick(adapterPosition, holder.itemView)
     )
+    // animate on first appearance
+    if (position > lastPosition) {
+      holder.itemView.apply {
+        animation = AnimationUtils.loadAnimation(
+          context,
+          R.anim.item_animation_from_bottom
+        )
+        startAnimation(animation)
+      }
+      lastPosition = position
+    }
 
     // if position = end offset we call method to load more data.
     if (adapterPosition == viewModel.getUsersCount() - viewModel.endOffset()) {

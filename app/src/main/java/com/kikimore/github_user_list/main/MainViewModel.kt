@@ -10,8 +10,11 @@ import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.main.users.UserListFragmentDirections
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -56,9 +59,16 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
           filteredUsers = users
         }
         searchResult.value = word
+      }.launchIn(viewModelScope)
+  }
+
+  private fun checkErrorIfCanRetry(errorMessage: String?): Boolean {
+    return errorMessage?.let {
+      when {
+        errorMessage.contains(HTTP_RATE_LIMIT_ERROR_CODE.toString()) -> false
+        else -> true
       }
-      .flowOn(Dispatchers.Default)
-      .launchIn(viewModelScope)
+    } ?: true
   }
 
   private suspend fun retryCall(retryMethod: () -> Unit) {
@@ -86,12 +96,10 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
           users = list
           filteredUsers = list
         }
-        if (it.status == Resource.Status.ERROR) {
+        if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
           retryCall(retry)
         }
-      }
-      ?.flowOn(Dispatchers.IO)
-      ?.launchIn(viewModelScope)
+      }?.launchIn(viewModelScope)
   }
 
   fun loadMoreUsers() {
@@ -103,7 +111,7 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
         api.userRepository().getUsers(user.id)
           .distinctUntilChanged()
           .onEach {
-            if (it.status == Resource.Status.ERROR) {
+            if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
               retryCall(retry)
             }
           }.launchIn(viewModelScope)
@@ -114,6 +122,8 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
   fun setSearch(word: String) {
     searchText.value = word
   }
+
+  fun hasUsers() = users?.isNotEmpty() ?: false
 
   fun getSearchResult() = searchResult
 
@@ -149,11 +159,10 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
         ?.onEach {
           profileState.value = it
           it.data?.also { data -> profile = data }
-          if (it.status == Resource.Status.ERROR) {
+          if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
             retryCall(retry)
           }
-        }?.flowOn(Dispatchers.IO)
-        ?.launchIn(viewModelScope)
+        }?.launchIn(viewModelScope)
     }
   }
 
@@ -172,5 +181,6 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
 
   companion object {
     private const val LIST_END_OFFSET = 10
+    private const val HTTP_RATE_LIMIT_ERROR_CODE = 403
   }
 }

@@ -49,7 +49,6 @@ class UserListFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    shimmerViewContainer.startShimmer()
     setListAdapter(view.userListView)
     setSearchView(view.userSearchView)
     setObservers()
@@ -71,7 +70,8 @@ class UserListFragment : Fragment() {
         }
         Resource.Status.ERROR -> {
           isLoading(false)
-          it.message?.let { it1 -> Snackbar.make(rootLayout, it1, Snackbar.LENGTH_LONG).show() }
+          hasData(viewModel.hasUsers())
+          it.message?.also { message -> showSnackBar(message) }
         }
       }
     }.launchIn(lifecycleScope)
@@ -118,6 +118,12 @@ class UserListFragment : Fragment() {
         shimmerViewContainer.startShimmer()
         shimmerViewContainer.visibility = View.VISIBLE
       }
+    }
+  }
+
+  private fun showSnackBar(message: String) {
+    view?.rootLayout?.also {
+      Snackbar.make(it, message, Snackbar.LENGTH_LONG).show()
     }
   }
 }
