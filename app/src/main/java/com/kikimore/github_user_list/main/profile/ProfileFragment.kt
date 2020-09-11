@@ -1,35 +1,53 @@
-package com.kikimore.github_user_list.profile
+package com.kikimore.github_user_list.main.profile
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.R
+import com.kikimore.github_user_list.main.MainViewModel
 import com.kikimore.github_user_list.utils.fetchViewModel
-import kotlinx.android.synthetic.main.activity_profile.*
+import kotlinx.android.synthetic.main.fragment_profile.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+/**
+ * Created by: ebaylon.
+ * Created on: 11/09/2020.
+ */
+@FlowPreview
 @ExperimentalCoroutinesApi
-class ProfileActivity : AppCompatActivity() {
+class ProfileFragment : Fragment() {
 
-  private val userName by lazy { intent.getStringExtra(USER_NAME) }
-  private val api by lazy { GitHubApi.getInstance(application) }
-  private val viewModel by lazy { fetchViewModel { ProfileViewModel(api, userName) } }
+  private val api by lazy { GitHubApi.getInstance(requireActivity().application) }
+  private val viewModel by lazy { requireActivity().fetchViewModel { MainViewModel(api) } }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_profile)
-    setDefault()
     viewModel.getProfile()
+  }
+
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?
+  ): View? {
+    return inflater.inflate(R.layout.fragment_profile, container, false)
+  }
+
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
+    setDefault()
     viewModel.getProfileState().onEach {
       if (it == null) return@onEach
       when (it.status) {
@@ -54,8 +72,7 @@ class ProfileActivity : AppCompatActivity() {
   private fun setDefault() {
     // back button
     backImageView.setOnClickListener {
-      onBackPressed()
-      finish()
+      findNavController().popBackStack()
     }
     // avatar
     val placeHolder: String? = null
@@ -65,7 +82,7 @@ class ProfileActivity : AppCompatActivity() {
       .centerInside()
       .into(userImageView)
     // header
-    headerTextView.text = userName
+    headerTextView.text = "User"
     // followers
     followersTextView.text = "Followers:"
     // following
@@ -113,15 +130,5 @@ class ProfileActivity : AppCompatActivity() {
 
   private fun isLoading(bool: Boolean = false) {
     progressBar.visibility = if (bool) View.VISIBLE else View.GONE
-  }
-
-  companion object {
-    private const val USER_NAME = "userName"
-    fun getIntent(context: Context, userName: String?): Intent {
-      return Intent(context, ProfileActivity::class.java).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        putExtra(USER_NAME, userName)
-      }
-    }
   }
 }

@@ -1,14 +1,15 @@
-package com.kikimore.github_user_list.users
+package com.kikimore.github_user_list.main
 
-import android.content.Context
+import android.view.View
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.findNavController
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
-import com.kikimore.github_user_list.profile.ProfileActivity
+import com.kikimore.github_user_list.main.users.UserListFragmentDirections
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -18,16 +19,19 @@ import kotlinx.coroutines.flow.*
  */
 @ExperimentalCoroutinesApi
 @FlowPreview
-class UserViewModel(private val api: GitHubApi?) : ViewModel() {
+class MainViewModel(private val api: GitHubApi?) : ViewModel() {
 
-  private val users = MutableStateFlow<List<UserAndProfile>?>(null)
-  private val filteredUsers = MutableStateFlow<List<UserAndProfile>?>(null)
   private val userAndProfileState = MutableStateFlow<Resource<List<UserAndProfile>>?>(null)
+  private val profileState = MutableStateFlow<Resource<Profile>?>(null)
   private val searchText = MutableStateFlow<String?>(null)
   private val searchResult = MutableStateFlow<String?>(null)
+  private val delayFactor = 2
   private var initialPageSize = 0
   private var currentDelay = 1000L
-  private val delayFactor = 2
+  private var users: List<UserAndProfile>? = null
+  private var filteredUsers: List<UserAndProfile>? = null
+  private var profile: Profile? = null
+  private var selectedUserName: String? = null
 
   init {
     observeSearch()
@@ -35,10 +39,11 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
 
   private fun observeSearch() {
     searchText
+      .debounce(500L)
       .onEach { word ->
         if (word == null) return@onEach
         if (word.isNotEmpty()) {
-          filteredUsers.value = users.value?.filter { userProfile ->
+          filteredUsers = users?.filter { userProfile ->
             val note = userProfile.profile?.note?.toLowerCase() ?: ""
             val userName = userProfile.user.login.toLowerCase()
             val finalWord = word.toLowerCase()
@@ -48,17 +53,13 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
             )
           }
         } else {
-          filteredUsers.value = users.value
+          filteredUsers = users
         }
         searchResult.value = word
       }
-      .flowOn(Dispatchers.IO)
+      .flowOn(Dispatchers.Default)
       .launchIn(viewModelScope)
   }
-
-  private fun getUser(position: Int): User? = filteredUsers.value?.get(position)?.user
-
-  private fun getProfile(position: Int): Profile? = filteredUsers.value?.get(position)?.profile
 
   private suspend fun retryCall(retryMethod: () -> Unit) {
     userAndProfileState.value = Resource.loading()
@@ -66,6 +67,12 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
     retryMethod()
     currentDelay *= delayFactor
   }
+
+  private fun getUserProfile(position: Int) = filteredUsers?.get(position)
+
+  private fun getUser(position: Int): User? = getUserProfile(position)?.user
+
+  private fun getProfile(position: Int): Profile? = getUserProfile(position)?.profile
 
   fun getUsers() {
     val retry = { getUsers() }
@@ -76,8 +83,8 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
         userAndProfileState.value = it
         it.data?.also { list ->
           if (initialPageSize == 0) initialPageSize = list.size
-          users.value = list
-          filteredUsers.value = list
+          users = list
+          filteredUsers = list
         }
         if (it.status == Resource.Status.ERROR) {
           retryCall(retry)
@@ -112,9 +119,7 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
 
   fun getUsersState() = userAndProfileState
 
-  fun getUsersCount() = filteredUsers.value?.size ?: 0
-
-  fun getId(position: Int) = getUser(position)?.id
+  fun getUsersCount() = filteredUsers?.size ?: 0
 
   fun getUserName(position: Int) = getUser(position)?.login
 
@@ -122,16 +127,44 @@ class UserViewModel(private val api: GitHubApi?) : ViewModel() {
 
   fun getAvatarUrl(position: Int) = getUser(position)?.avatarUrl
 
-  fun hasNote(position: Int): Boolean {
-    return getProfile(position)?.note != null
-  }
+  fun hasNote(position: Int): Boolean = getProfile(position)?.note != null
 
   fun isFourth(position: Int): Boolean = (position + 1) % 4 == 0
 
-  fun onClick(position: Int, context: Context): () -> Unit = {
-    val user = getUser(position)
-    ProfileActivity.getIntent(context, user?.login).apply {
-      context.startActivity(this)
+  fun onClick(position: Int, view: View): () -> Unit = {
+    selectedUserName = getUser(position)?.login
+    view.findNavController()
+      .navigate(UserListFragmentDirections.navigationUserListToNavigationProfile())
+  }
+
+  fun getProfileState() = profileState
+
+  fun getProfile() {
+    profileState.value = Resource.loading()
+    val retry = { getProfile() }
+    selectedUserName?.also { userName ->
+      api?.userRepository()?.getProfile(userName)
+        ?.distinctUntilChanged()
+        ?.catch { profileState.value = Resource.error(it.message!!) }
+        ?.onEach {
+          profileState.value = it
+          it.data?.also { data -> profile = data }
+          if (it.status == Resource.Status.ERROR) {
+            retryCall(retry)
+          }
+        }?.flowOn(Dispatchers.IO)
+        ?.launchIn(viewModelScope)
+    }
+  }
+
+  fun saveNote(note: String) {
+    profileState.value = Resource.loading()
+    val finalNote = if (note.isEmpty()) null else note
+    val newProfile = profile?.copy(note = finalNote)
+    newProfile?.also {
+      api?.userRepository()?.updateProfile(it)?.onEach { resource ->
+        profileState.value = resource
+      }?.launchIn(viewModelScope)
     }
   }
 

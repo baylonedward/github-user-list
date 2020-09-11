@@ -1,4 +1,4 @@
-package com.kikimore.github_user_list.users
+package com.kikimore.github_user_list.main.users
 
 import android.graphics.ColorMatrixColorFilter
 import android.view.LayoutInflater
@@ -7,15 +7,18 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.kikimore.github_user_list.R
+import com.kikimore.github_user_list.main.MainViewModel
 import kotlinx.android.synthetic.main.layout_user_item.view.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 
 /**
  * Created by: ebaylon.
  * Created on: 28/08/2020.
  */
+@FlowPreview
 @ExperimentalCoroutinesApi
-class UserListAdapter(private val viewModel: UserViewModel) :
+class UserListAdapter(private val viewModel: MainViewModel) :
   RecyclerView.Adapter<UserListAdapter.UserViewHolder>() {
 
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
@@ -32,7 +35,7 @@ class UserListAdapter(private val viewModel: UserViewModel) :
       viewModel.getDetails(adapterPosition),
       viewModel.hasNote(adapterPosition),
       viewModel.isFourth(adapterPosition),
-      viewModel.onClick(adapterPosition, holder.itemView.context)
+      viewModel.onClick(adapterPosition, holder.itemView)
     )
 
     // if position = end offset we call method to load more data.
