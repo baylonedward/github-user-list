@@ -10,11 +10,8 @@ import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.main.users.UserListFragmentDirections
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -24,15 +21,15 @@ import kotlinx.coroutines.launch
 @FlowPreview
 class MainViewModel(private val api: GitHubApi?) : ViewModel() {
 
-  private val userAndProfileState = MutableStateFlow<Resource<List<UserAndProfile>>?>(null)
+  private val userAndProfileState = MutableStateFlow<Resource<List<UserAndProfile?>>?>(null)
   private val profileState = MutableStateFlow<Resource<Profile>?>(null)
   private val searchText = MutableStateFlow<String?>(null)
   private val searchResult = MutableStateFlow<String?>(null)
   private val delayFactor = 2
   private var initialPageSize = 0
   private var currentDelay = 1000L
-  private var users: List<UserAndProfile>? = null
-  private var filteredUsers: List<UserAndProfile>? = null
+  private var users: List<UserAndProfile?>? = null
+  private var filteredUsers: List<UserAndProfile?>? = null
   private var profile: Profile? = null
   private var selectedUserName: String? = null
 
@@ -47,8 +44,8 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
         if (word == null) return@onEach
         if (word.isNotEmpty()) {
           filteredUsers = users?.filter { userProfile ->
-            val note = userProfile.profile?.note?.toLowerCase() ?: ""
-            val userName = userProfile.user.login.toLowerCase()
+            val note = userProfile?.profile?.note?.toLowerCase() ?: ""
+            val userName = userProfile?.user?.login?.toLowerCase() ?: ""
             val finalWord = word.toLowerCase()
             userName.contains(finalWord, ignoreCase = true) || note.contains(
               finalWord,
@@ -80,9 +77,25 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
 
   private fun getUserProfile(position: Int) = filteredUsers?.get(position)
 
-  private fun getUser(position: Int): User? = getUserProfile(position)?.user
-
   private fun getProfile(position: Int): Profile? = getUserProfile(position)?.profile
+
+  private fun addLoadingItem() {
+    val newList = filteredUsers?.toMutableList()
+    newList?.add(null)
+    userAndProfileState.value = userAndProfileState.value?.copy(data = newList?.toList())
+    users = newList?.toList()
+    filteredUsers = newList?.toList()
+  }
+
+  private fun removeLoadingItem() {
+    val newList = filteredUsers?.toMutableList()
+    newList?.removeAt(newList.size - 1)
+    userAndProfileState.value = userAndProfileState.value?.copy(data = newList?.toList())
+    users = newList?.toList()
+    filteredUsers = newList?.toList()
+  }
+
+  fun getUser(position: Int): User? = getUserProfile(position)?.user
 
   fun getUsers() {
     val retry = { getUsers() }
@@ -102,18 +115,23 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
       }?.launchIn(viewModelScope)
   }
 
-  fun loadMoreUsers() {
+  fun loadMoreUsers(position: Int) {
     if (initialPageSize == 0) return
-    val retry = { loadMoreUsers() }
-    userAndProfileState.value = Resource.loading()
-    viewModelScope.launch {
-      api?.userRepository()?.getLastUser()?.also { user ->
+    if (position == getUsersCount() - 1 && getUser(position) != null) { // position is end of list
+      addLoadingItem() // add loading item on list
+      val retry = { loadMoreUsers(position) }
+      viewModelScope.launch {
+        delay(2000L) // add delay to see loading item
+        val user = api?.userRepository()?.getLastUser()?.first() ?: return@launch
         api.userRepository().getUsers(user.id)
           .distinctUntilChanged()
           .onEach {
+            userAndProfileState.value = it
             if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
               retryCall(retry)
             }
+            removeLoadingItem()
+            cancel() // cancel job after first result
           }.launchIn(viewModelScope)
       }
     }
@@ -176,8 +194,6 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
       }?.launchIn(viewModelScope)
     }
   }
-
-  fun endOffset() = LIST_END_OFFSET
 
   companion object {
     private const val LIST_END_OFFSET = 10

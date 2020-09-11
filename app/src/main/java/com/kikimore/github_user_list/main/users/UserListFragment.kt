@@ -84,7 +84,18 @@ class UserListFragment : Fragment() {
   private fun setListAdapter(recyclerView: RecyclerView) {
     recyclerView.apply {
       layoutManager = LinearLayoutManager(this@UserListFragment.activity)
+      addOnScrollListener(listAdapterScrollListener())
       adapter = listAdapter
+    }
+  }
+
+  private fun listAdapterScrollListener() = object : RecyclerView.OnScrollListener() {
+    override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+      super.onScrollStateChanged(recyclerView, newState)
+      if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
+        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+        viewModel.loadMoreUsers(layoutManager.findLastCompletelyVisibleItemPosition())
+      }
     }
   }
 

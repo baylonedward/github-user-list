@@ -20,41 +20,54 @@ import kotlinx.coroutines.FlowPreview
 @FlowPreview
 @ExperimentalCoroutinesApi
 class UserListAdapter(private val viewModel: MainViewModel) :
-  RecyclerView.Adapter<UserListAdapter.UserViewHolder>() {
+  RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+  private val VIEW_TYPE_ITEM = 0
+  private val VIEW_TYPE_LOADING = 1
   private var lastPosition = -1
 
-  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-    val layoutInflater = LayoutInflater.from(parent.context)
-    val view = layoutInflater.inflate(R.layout.layout_user_item, parent, false)
-    return UserViewHolder(view)
+  override fun getItemViewType(position: Int): Int {
+    return if (viewModel.getUser(position) == null) VIEW_TYPE_LOADING else VIEW_TYPE_ITEM
   }
 
-  override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
-    val adapterPosition = holder.adapterPosition
-    holder.onBind(
-      viewModel.getAvatarUrl(adapterPosition),
-      viewModel.getUserName(adapterPosition),
-      viewModel.getDetails(adapterPosition),
-      viewModel.hasNote(adapterPosition),
-      viewModel.isFourth(adapterPosition),
-      viewModel.onClick(adapterPosition, holder.itemView)
-    )
-    // animate on first appearance
-    if (position > lastPosition) {
-      holder.itemView.apply {
-        animation = AnimationUtils.loadAnimation(
-          context,
-          R.anim.item_animation_from_bottom
-        )
-        startAnimation(animation)
-      }
-      lastPosition = position
+  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    val layoutInflater = LayoutInflater.from(parent.context)
+    return if (viewType == VIEW_TYPE_ITEM){
+      val view = layoutInflater.inflate(R.layout.layout_user_item, parent, false)
+      UserViewHolder(view)
+    } else {
+      val view = layoutInflater.inflate(R.layout.layout_user_item_loading, parent, false)
+      LoadingViewHolder(view)
     }
+  }
 
-    // if position = end offset we call method to load more data.
-    if (adapterPosition == viewModel.getUsersCount() - viewModel.endOffset()) {
-      viewModel.loadMoreUsers()
+  override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    when (holder) {
+      is UserViewHolder -> {
+        val adapterPosition = holder.adapterPosition
+        holder.onBind(
+          viewModel.getAvatarUrl(adapterPosition),
+          viewModel.getUserName(adapterPosition),
+          viewModel.getDetails(adapterPosition),
+          viewModel.hasNote(adapterPosition),
+          viewModel.isFourth(adapterPosition),
+          viewModel.onClick(adapterPosition, holder.itemView)
+        )
+        // animate on first appearance
+        if (position > lastPosition) {
+          holder.itemView.apply {
+            animation = AnimationUtils.loadAnimation(
+              context,
+              R.anim.item_animation_from_bottom
+            )
+            startAnimation(animation)
+          }
+          lastPosition = position
+        }
+      }
+      is LoadingViewHolder -> {
+        holder.onBind()
+      }
     }
   }
 
@@ -103,6 +116,12 @@ class UserListAdapter(private val viewModel: MainViewModel) :
         0f, 0f, -1.0f, 0f, 255f, // blue
         0f, 0f, 0f, 1.0f, 0f //alpha
       )
+    }
+  }
+
+  class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    fun onBind() {
+
     }
   }
 }
