@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/rootLayout"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <com.google.android.material.appbar.AppBarLayout
+    android:id="@+id/appBarLayout"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:background="@color/colorPrimaryDark"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:padding="8dp">
+
+      <ImageView
+        android:id="@+id/backImageView"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_chevron"
+        app:tint="@color/white" />
+
+      <TextView
+        android:id="@+id/headerTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/backImageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.37"
+        app:layout_constraintStart_toEndOf="@+id/backImageView"
+        app:layout_constraintTop_toTopOf="@+id/backImageView"
+        tools:text="Tom Preston-Werner" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+  </com.google.android.material.appbar.AppBarLayout>
+
+  <ScrollView
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    app:layout_constraintBottom_toTopOf="@id/progressBar"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content">
+
+      <ImageView
+        android:id="@+id/userImageView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline7"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars" />
+
+      <TextView
+        android:id="@+id/followersTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/guideline6"
+        app:layout_constraintStart_toStartOf="@+id/userImageView"
+        app:layout_constraintTop_toTopOf="@+id/guideline7"
+        tools:text="Followers: 234" />
+
+      <TextView
+        android:id="@+id/followingTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@+id/userImageView"
+        app:layout_constraintStart_toStartOf="@+id/guideline6"
+        app:layout_constraintTop_toBottomOf="@+id/userImageView"
+        tools:text="Following:123423" />
+
+      <TextView
+        android:id="@+id/nameTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/userImageView"
+        app:layout_constraintStart_toStartOf="@+id/userImageView"
+        app:layout_constraintTop_toBottomOf="@+id/followersTextView"
+        tools:text="Name: Tom Preston-Werner" />
+
+      <TextView
+        android:id="@+id/companyTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/nameTextView"
+        app:layout_constraintStart_toStartOf="@+id/nameTextView"
+        app:layout_constraintTop_toBottomOf="@+id/nameTextView"
+        tools:text="Company: Apple" />
+
+      <TextView
+        android:id="@+id/blogTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/companyTextView"
+        app:layout_constraintStart_toStartOf="@+id/companyTextView"
+        app:layout_constraintTop_toBottomOf="@+id/companyTextView"
+        tools:text="Blog: http://tom.preston-werner.com" />
+
+      <TextView
+        android:id="@+id/noteLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/note_label"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/blogTextView"
+        app:layout_constraintTop_toBottomOf="@+id/blogTextView" />
+
+      <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/noteInputLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/guideline8"
+        app:layout_constraintEnd_toEndOf="@+id/blogTextView"
+        app:layout_constraintStart_toStartOf="@+id/blogTextView"
+        app:layout_constraintTop_toBottomOf="@+id/noteLabel">
+
+        <com.google.android.material.textfield.TextInputEditText
+          android:id="@+id/noteEditText"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:ems="10"
+          android:gravity="start|top"
+          android:inputType="textMultiLine" />
+      </com.google.android.material.textfield.TextInputLayout>
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/saveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/save"
+        app:cornerRadius="16dp"
+        app:layout_constraintEnd_toEndOf="@+id/noteInputLayout"
+        app:layout_constraintStart_toStartOf="@+id/noteInputLayout"
+        app:layout_constraintTop_toBottomOf="@+id/noteInputLayout" />
+
+      <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".5" />
+
+      <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.3" />
+
+      <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.65" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+  </ScrollView>
+
+  <ProgressBar
+    android:id="@+id/progressBar"
+    style="?android:attr/progressBarStyleHorizontal"
+    android:layout_width="0dp"
+    android:layout_height="8dp"
+    android:indeterminate="true"
+    android:indeterminateTint="@color/colorPrimaryDark"
+    android:progressTint="@color/colorPrimaryDark"
+    android:scaleY="4"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

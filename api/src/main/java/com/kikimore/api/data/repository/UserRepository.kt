@@ -56,7 +56,9 @@ class UserRepository(
     }
   }.flowOn(Dispatchers.IO)
 
-  suspend fun getLastUser() = userLocalDataSource.getLast().firstOrNull()
+  fun getLastUser() = flow {
+    emit(userLocalDataSource.getLast().firstOrNull())
+  }
 
   fun updateProfile(profile: Profile): Flow<Resource<Profile>> {
     return flow {
