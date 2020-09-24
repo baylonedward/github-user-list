@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.snackbar.Snackbar
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
@@ -108,6 +109,7 @@ class ProfileFragment : Fragment() {
     Glide.with(this)
       .load(profile.avatarUrl)
       .centerInside()
+      .apply(RequestOptions.circleCropTransform())
       .into(userImageView)
     // followers
     followersTextView.text = "Followers: ${profile.followers}"

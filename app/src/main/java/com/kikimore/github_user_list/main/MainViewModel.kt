@@ -42,8 +42,8 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
       .debounce(500L)
       .onEach { word ->
         if (word == null) return@onEach
-        if (word.isNotEmpty()) {
-          filteredUsers = users?.filter { userProfile ->
+        filteredUsers = if (word.isNotEmpty()) {
+          users?.filter { userProfile ->
             val note = userProfile?.profile?.note?.toLowerCase() ?: ""
             val userName = userProfile?.user?.login?.toLowerCase() ?: ""
             val finalWord = word.toLowerCase()
@@ -53,7 +53,7 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
             )
           }
         } else {
-          filteredUsers = users
+          users
         }
         searchResult.value = word
       }.launchIn(viewModelScope)

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.kikimore.github_user_list.R
 import com.kikimore.github_user_list.main.MainViewModel
 import kotlinx.android.synthetic.main.layout_user_item.view.*
@@ -22,8 +23,6 @@ import kotlinx.coroutines.FlowPreview
 class UserListAdapter(private val viewModel: MainViewModel) :
   RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-  private val VIEW_TYPE_ITEM = 0
-  private val VIEW_TYPE_LOADING = 1
   private var lastPosition = -1
 
   override fun getItemViewType(position: Int): Int {
@@ -32,7 +31,7 @@ class UserListAdapter(private val viewModel: MainViewModel) :
 
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
     val layoutInflater = LayoutInflater.from(parent.context)
-    return if (viewType == VIEW_TYPE_ITEM){
+    return if (viewType == VIEW_TYPE_ITEM) {
       val view = layoutInflater.inflate(R.layout.layout_user_item, parent, false)
       UserViewHolder(view)
     } else {
@@ -66,13 +65,17 @@ class UserListAdapter(private val viewModel: MainViewModel) :
         }
       }
       is LoadingViewHolder -> {
-        holder.onBind()
       }
     }
   }
 
   override fun getItemCount(): Int {
     return viewModel.getUsersCount()
+  }
+
+  companion object {
+    private const val VIEW_TYPE_ITEM = 0
+    private const val VIEW_TYPE_LOADING = 1
   }
 
   class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -119,9 +122,5 @@ class UserListAdapter(private val viewModel: MainViewModel) :
     }
   }
 
-  class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    fun onBind() {
-
-    }
-  }
+  class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 }
