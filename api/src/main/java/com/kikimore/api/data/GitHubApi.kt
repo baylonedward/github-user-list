@@ -17,7 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory
  * Created on: 28/08/2020.
  */
 @ExperimentalCoroutinesApi
-class GitHubApi(context: Context) {
+class GitHubApi private constructor(context: Context) {
   private val retrofit = Retrofit.Builder()
     .baseUrl(baseUrl)
     .addConverterFactory(GsonConverterFactory.create())
@@ -28,7 +28,7 @@ class GitHubApi(context: Context) {
   private val db = GitHubDatabase.getDatabase(context)
 
   fun userRepository(): UserRepository {
-    return UserRepository(
+    return UserRepository.getInstance(
       remoteDataSource = userRemoteDataSource,
       userLocalDataSource = db.userDao(),
       profileLocalDataSource = db.profileDao()
@@ -37,18 +37,14 @@ class GitHubApi(context: Context) {
 
   //singleton
   companion object {
-    @Volatile
-    private var instance: GitHubApi? = null
     private const val baseUrl = "https://api.github.com/"
 
-    fun getInstance(application: Application): GitHubApi? {
-      if (instance == null) {
-        println("API is null, creating new instance.")
-        synchronized(GitHubApi::class.java) {
-          instance = GitHubApi(application)
-        }
-      }
-      return instance
+    @Volatile
+    private var instance: GitHubApi? = null
+
+    fun getInstance(application: Application): GitHubApi = instance ?: synchronized(this) {
+      println("API is null, creating new instance.")
+      GitHubApi(application).also { instance = it }
     }
   }
 }

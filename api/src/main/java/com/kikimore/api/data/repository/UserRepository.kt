@@ -6,7 +6,6 @@ import com.kikimore.api.data.local.UserDao
 import com.kikimore.api.data.remote.UserRemoteDataSource
 import com.kikimore.api.utils.Resource
 import com.kikimore.api.utils.performGetOperation
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -17,11 +16,10 @@ import kotlinx.coroutines.launch
  * Created on: 28/08/2020.
  */
 @ExperimentalCoroutinesApi
-class UserRepository(
+class UserRepository private constructor(
   private val remoteDataSource: UserRemoteDataSource,
   private val userLocalDataSource: UserDao,
   private val profileLocalDataSource: ProfileDao
-
 ) {
 
   fun getUsers(since: Int = 0) = performGetOperation(
@@ -41,9 +39,9 @@ class UserRepository(
     }
 
     val networkCall = remoteDataSource.getUserProfile(userName)
-    when(networkCall.status) {
+    when (networkCall.status) {
       Resource.Status.SUCCESS -> {
-        if (profile != null){
+        if (profile != null) {
           networkCall.data?.copy(note = profile?.note)?.also {
             profileLocalDataSource.insert(it)
           }
@@ -52,7 +50,8 @@ class UserRepository(
         }
       }
       Resource.Status.ERROR -> send(Resource.error(networkCall.message!!))
-      else -> {}
+      else -> {
+      }
     }
   }.flowOn(Dispatchers.IO)
 
@@ -64,6 +63,22 @@ class UserRepository(
     return flow {
       profileLocalDataSource.update(profile)
       emit(Resource.success(profile))
+    }
+  }
+
+  companion object {
+    @Volatile
+    private var instance: UserRepository? = null
+
+    fun getInstance(
+      remoteDataSource: UserRemoteDataSource,
+      userLocalDataSource: UserDao,
+      profileLocalDataSource: ProfileDao
+    ) = instance ?: synchronized(this) {
+      println("UserRepository is null, creating new instance.")
+      UserRepository(remoteDataSource, userLocalDataSource, profileLocalDataSource).also {
+        instance = it
+      }
     }
   }
 }
