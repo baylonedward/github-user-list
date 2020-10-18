@@ -50,7 +50,7 @@ class UserListAdapter(private val viewModel: MainViewModel) :
           viewModel.getDetails(adapterPosition),
           viewModel.hasNote(adapterPosition),
           viewModel.isFourth(adapterPosition),
-          viewModel.onClick(adapterPosition, holder.itemView)
+          viewModel.onClick(adapterPosition)
         )
         // animate on first appearance
         if (position > lastPosition) {

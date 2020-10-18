@@ -9,18 +9,20 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.google.android.material.snackbar.Snackbar
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.R
 import com.kikimore.github_user_list.main.MainViewModel
 import com.kikimore.github_user_list.utils.fetchViewModel
+import com.kikimore.github_user_list.utils.showSnackBar
+import com.kikimore.github_user_list.utils.showToast
 import kotlinx.android.synthetic.main.fragment_profile.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -35,7 +37,9 @@ class ProfileFragment : Fragment() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    viewModel.getProfile()
+    lifecycleScope.launch {
+      viewModel.getProfile()
+    }
   }
 
   override fun onCreateView(
@@ -58,16 +62,22 @@ class ProfileFragment : Fragment() {
             disableNote(false)
             setContent(profile)
           }
+          it.message?.also { message -> showToast(view.context, message) }
         }
         Resource.Status.LOADING -> {
           isLoading(true)
         }
         Resource.Status.ERROR -> {
           isLoading(false)
-          it.message?.let { it1 -> Snackbar.make(rootLayout, it1, Snackbar.LENGTH_LONG).show() }
+          it.message?.also { message -> showSnackBar(view, message) }
         }
       }
     }.launchIn(lifecycleScope)
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    viewModel.clearProfile()
   }
 
   private fun setDefault() {

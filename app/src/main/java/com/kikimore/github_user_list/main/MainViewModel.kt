@@ -1,17 +1,17 @@
 package com.kikimore.github_user_list.main
 
-import android.view.View
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.findNavController
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
-import com.kikimore.github_user_list.main.users.UserListFragmentDirections
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -19,19 +19,18 @@ import kotlinx.coroutines.flow.*
  */
 @ExperimentalCoroutinesApi
 @FlowPreview
-class MainViewModel(private val api: GitHubApi?) : ViewModel() {
+class MainViewModel(private val api: GitHubApi) : ViewModel() {
 
   private val userAndProfileState = MutableStateFlow<Resource<List<UserAndProfile?>>?>(null)
   private val profileState = MutableStateFlow<Resource<Profile>?>(null)
   private val searchText = MutableStateFlow<String?>(null)
   private val searchResult = MutableStateFlow<String?>(null)
-  private val delayFactor = 2
   private var initialPageSize = 0
-  private var currentDelay = 1000L
   private var users: List<UserAndProfile?>? = null
   private var filteredUsers: List<UserAndProfile?>? = null
-  private var profile: Profile? = null
   private var selectedUserName: String? = null
+  private var currentDelay = 1000L
+  val onSelect = MutableStateFlow<Boolean?>(null)
 
   init {
     observeSearch()
@@ -68,11 +67,10 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
     } ?: true
   }
 
-  private suspend fun retryCall(retryMethod: () -> Unit) {
-    userAndProfileState.value = Resource.loading()
+  private suspend fun retryCall(retryMethod: suspend () -> Unit) {
     delay(currentDelay)
     retryMethod()
-    currentDelay *= delayFactor
+    currentDelay *= 2
   }
 
   private fun getUserProfile(position: Int) = filteredUsers?.get(position)
@@ -98,42 +96,43 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
   fun getUser(position: Int): User? = getUserProfile(position)?.user
 
   fun getUsers() {
-    val retry = { getUsers() }
-    api?.userRepository()?.getUsers()
-      ?.distinctUntilChanged()
-      ?.catch { userAndProfileState.value = Resource.error(it.message!!) }
-      ?.onEach {
-        userAndProfileState.value = it
-        it.data?.also { list ->
-          if (initialPageSize == 0) initialPageSize = list.size
-          users = list
-          filteredUsers = list
+    viewModelScope.launch {
+      val retry: suspend () -> Unit = { getUsers() }
+      api.userRepository().getUsers()
+        .distinctUntilChanged()
+        .catch { userAndProfileState.value = Resource.error(it.message!!) }
+        .collect {
+          userAndProfileState.value = it
+          it.data?.also { list ->
+            if (initialPageSize == 0) initialPageSize = list.size
+            users = list
+            filteredUsers = list
+          }
+          if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
+            retryCall(retry)
+          }
         }
-        if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
-          retryCall(retry)
-        }
-      }?.launchIn(viewModelScope)
+    }
   }
 
-  fun loadMoreUsers(position: Int) {
+  suspend fun loadMoreUsers(position: Int) {
     if (initialPageSize == 0) return
-    if (position == getUsersCount() - 1 && getUser(position) != null) { // position is end of list
+    if (position == (users?.size
+        ?: 0) - 1 && getUser(position) != null
+    ) { // position is end of list
       addLoadingItem() // add loading item on list
-      val retry = { loadMoreUsers(position) }
-      viewModelScope.launch {
-        delay(2000L) // add delay to see loading item
-        val user = api?.userRepository()?.getLastUser()?.first() ?: return@launch
-        api.userRepository().getUsers(user.id)
-          .distinctUntilChanged()
-          .onEach {
-            userAndProfileState.value = it
-            if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
-              retryCall(retry)
-            }
-            removeLoadingItem()
-            cancel() // cancel job after first result
-          }.launchIn(viewModelScope)
-      }
+      delay(2000L) // add delay to see loading item
+      val user = api.userRepository().getLastUser().first() ?: return
+      api.userRepository().getUsers(user.id)
+        .distinctUntilChanged()
+        .catch { userAndProfileState.value = Resource.error(it.message!!) }
+        .collect {
+          userAndProfileState.value = it
+          it.data?.also { list ->
+            users = list
+            filteredUsers = list
+          }
+        }
     }
   }
 
@@ -141,7 +140,7 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
     searchText.value = word
   }
 
-  fun hasUsers() = users?.isNotEmpty() ?: false
+  fun hasUsers() = api.userRepository().hasUser()
 
   fun getSearchResult() = searchResult
 
@@ -159,44 +158,48 @@ class MainViewModel(private val api: GitHubApi?) : ViewModel() {
 
   fun isFourth(position: Int): Boolean = (position + 1) % 4 == 0
 
-  fun onClick(position: Int, view: View): () -> Unit = {
+  fun onClick(position: Int): () -> Unit = {
     selectedUserName = getUser(position)?.login
-    view.findNavController()
-      .navigate(UserListFragmentDirections.navigationUserListToNavigationProfile())
+    onSelect.value = true
+    onSelect.value = null
   }
 
   fun getProfileState() = profileState
 
-  fun getProfile() {
-    profileState.value = Resource.loading()
-    val retry = { getProfile() }
+  suspend fun getProfile() {
+    val retry: suspend () -> Unit = { getProfile() }
     selectedUserName?.also { userName ->
-      api?.userRepository()?.getProfile(userName)
-        ?.distinctUntilChanged()
-        ?.catch { profileState.value = Resource.error(it.message!!) }
-        ?.onEach {
-          profileState.value = it
-          it.data?.also { data -> profile = data }
+      api.userRepository().getProfile(userName)
+        .distinctUntilChanged()
+        .catch { profileState.value = Resource.error(it.message!!) }
+        .collect {
+          if (it.status == Resource.Status.SUCCESS) profileState.value = it
           if (it.status == Resource.Status.ERROR && checkErrorIfCanRetry(it.message)) {
             retryCall(retry)
           }
-        }?.launchIn(viewModelScope)
+        }
     }
   }
 
   fun saveNote(note: String) {
-    profileState.value = Resource.loading()
     val finalNote = if (note.isEmpty()) null else note
-    val newProfile = profile?.copy(note = finalNote)
+    val newProfile = profileState.value?.data?.copy(note = finalNote)
+    profileState.value = Resource.loading()
     newProfile?.also {
-      api?.userRepository()?.updateProfile(it)?.onEach { resource ->
-        profileState.value = resource
-      }?.launchIn(viewModelScope)
+      viewModelScope.launch {
+        api.userRepository().updateProfile(it).collect { resource ->
+          profileState.value = resource
+        }
+      }
     }
   }
 
+  fun clearProfile() {
+    profileState.value = null
+  }
+
   companion object {
-    private const val LIST_END_OFFSET = 10
+    private const val initialDelay = 1000L
     private const val HTTP_RATE_LIMIT_ERROR_CODE = 403
   }
 }

@@ -30,27 +30,32 @@ class UserRepository private constructor(
 
   fun getProfile(userName: String) = channelFlow<Resource<Profile>> {
     send(Resource.loading())
-    var profile: Profile? = null
+    // db call
     launch {
       profileLocalDataSource.get(userName).collect {
         send(Resource.success(it))
-        profile = it
       }
     }
 
-    val networkCall = remoteDataSource.getUserProfile(userName)
-    when (networkCall.status) {
-      Resource.Status.SUCCESS -> {
-        if (profile != null) {
-          networkCall.data?.copy(note = profile?.note)?.also {
-            profileLocalDataSource.insert(it)
+    // network call
+    remoteDataSource.getUserProfile(userName).also { networkCall ->
+      val profile = profileLocalDataSource.get(userName).firstOrNull()
+      when (networkCall.status) {
+        Resource.Status.SUCCESS -> {
+          if (profile != null) {
+            networkCall.data?.copy(note = profile.note)?.also {
+              profileLocalDataSource.insert(it)
+            }
+          } else {
+            networkCall.data?.also { profileLocalDataSource.insert(it) }
           }
-        } else {
-          networkCall.data?.also { profileLocalDataSource.insert(it) }
         }
-      }
-      Resource.Status.ERROR -> send(Resource.error(networkCall.message!!))
-      else -> {
+        Resource.Status.ERROR -> {
+          send(Resource.error(networkCall.message!!))
+          profile?.also { Resource.success(it) }
+        }
+        else -> {
+        }
       }
     }
   }.flowOn(Dispatchers.IO)
@@ -60,10 +65,19 @@ class UserRepository private constructor(
   }
 
   fun updateProfile(profile: Profile): Flow<Resource<Profile>> {
+    val message = "Profile Updated!"
     return flow {
-      profileLocalDataSource.update(profile)
-      emit(Resource.success(profile))
+      profileLocalDataSource.update(profile).run {
+        emit(Resource.success(profile, message))
+      }
     }
+  }
+
+  fun hasUser() = channelFlow {
+    userLocalDataSource.all().collect {
+      send(it.count() > 0)
+    }
+    send(false)
   }
 
   companion object {

@@ -23,16 +23,25 @@ fun <T, A> performGetOperation(
       send(it)
     }
   }
-  val responseStatus = networkCall.invoke()
-  when (responseStatus.status) {
-    Resource.Status.SUCCESS -> {
-      responseStatus.data?.also {
-        saveCallResult(it)
-        networkCallBack?.invoke(it)
+  networkCall.invoke().also { response ->
+    when (response.status) {
+      Resource.Status.SUCCESS -> {
+        response.data?.also {
+          saveCallResult(it)
+          networkCallBack?.invoke(it)
+        }
       }
-    }
-    Resource.Status.ERROR -> send(Resource.error(responseStatus.message!!))
-    else -> {
+      Resource.Status.LOADING -> {
+        send(Resource.loading())
+      }
+      Resource.Status.ERROR -> {
+        send(Resource.error(response.message!!))
+        databaseQuery.invoke().map { Resource.success(it) }.firstOrNull()?.also {
+          send(it)
+        }
+      }
+      else -> {
+      }
     }
   }
 }.flowOn(Dispatchers.IO)

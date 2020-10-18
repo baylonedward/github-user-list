@@ -9,18 +9,20 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
 import com.kikimore.api.data.GitHubApi
 import com.kikimore.api.utils.Resource
 import com.kikimore.github_user_list.R
 import com.kikimore.github_user_list.main.MainViewModel
 import com.kikimore.github_user_list.utils.fetchViewModel
+import com.kikimore.github_user_list.utils.showSnackBar
+import com.kikimore.github_user_list.utils.showToast
 import kotlinx.android.synthetic.main.fragment_user_list.*
 import kotlinx.android.synthetic.main.fragment_user_list.view.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -36,7 +38,9 @@ class UserListFragment : Fragment() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    viewModel.getUsers()
+    lifecycleScope.launch {
+      viewModel.getUsers()
+    }
   }
 
   override fun onCreateView(
@@ -60,24 +64,31 @@ class UserListFragment : Fragment() {
       when (it.status) {
         Resource.Status.SUCCESS -> {
           listAdapter.notifyDataSetChanged()
+          it.message?.also { message -> showToast(view?.context, message) }
           isLoading(false)
-          it.data.also { list ->
-            hasData(list?.isNotEmpty() ?: false)
-          }
         }
         Resource.Status.LOADING -> {
           isLoading(true)
         }
         Resource.Status.ERROR -> {
           isLoading(false)
-          hasData(viewModel.hasUsers())
-          it.message?.also { message -> showSnackBar(message) }
+          it.message?.also { message -> showSnackBar(view, message) }
         }
       }
     }.launchIn(lifecycleScope)
     // search result
     viewModel.getSearchResult().onEach {
       listAdapter.notifyDataSetChanged()
+    }.launchIn(lifecycleScope)
+    // has user
+    viewModel.hasUsers().onEach {
+      if (it) {
+        view?.shimmerViewContainer?.stopShimmer()
+        view?.shimmerViewContainer?.visibility = View.GONE
+      } else {
+        view?.shimmerViewContainer?.startShimmer()
+        view?.shimmerViewContainer?.visibility = View.VISIBLE
+      }
     }.launchIn(lifecycleScope)
   }
 
@@ -92,9 +103,11 @@ class UserListFragment : Fragment() {
   private fun listAdapterScrollListener() = object : RecyclerView.OnScrollListener() {
     override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
       super.onScrollStateChanged(recyclerView, newState)
-      if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
+      if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
         val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-        viewModel.loadMoreUsers(layoutManager.findLastCompletelyVisibleItemPosition())
+        lifecycleScope.launch {
+          viewModel.loadMoreUsers(layoutManager.findLastCompletelyVisibleItemPosition())
+        }
       }
     }
   }
@@ -117,24 +130,6 @@ class UserListFragment : Fragment() {
   private fun isLoading(bool: Boolean = false) {
     view?.progressBar?.apply {
       visibility = if (bool) View.VISIBLE else View.GONE
-    }
-  }
-
-  private fun hasData(bool: Boolean = false) {
-    view?.also {
-      if (bool) {
-        shimmerViewContainer.stopShimmer()
-        shimmerViewContainer.visibility = View.GONE
-      } else {
-        shimmerViewContainer.startShimmer()
-        shimmerViewContainer.visibility = View.VISIBLE
-      }
-    }
-  }
-
-  private fun showSnackBar(message: String) {
-    view?.rootLayout?.also {
-      Snackbar.make(it, message, Snackbar.LENGTH_LONG).show()
     }
   }
 }
