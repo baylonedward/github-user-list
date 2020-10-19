@@ -80,6 +80,11 @@ class ProfileFragment : Fragment() {
     viewModel.clearProfile()
   }
 
+  override fun onPause() {
+    super.onPause()
+    viewModel.cancelJobs()
+  }
+
   private fun setDefault() {
     // back button
     backImageView.setOnClickListener {

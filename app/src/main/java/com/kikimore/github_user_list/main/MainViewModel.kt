@@ -7,11 +7,8 @@ import com.kikimore.api.data.entities.user.Profile
 import com.kikimore.api.data.entities.user.User
 import com.kikimore.api.data.entities.user.UserAndProfile
 import com.kikimore.api.utils.Resource
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 /**
  * Created by: ebaylon.
@@ -80,14 +77,6 @@ class MainViewModel(private val api: GitHubApi) : ViewModel() {
   private fun addLoadingItem() {
     val newList = filteredUsers?.toMutableList()
     newList?.add(null)
-    userAndProfileState.value = userAndProfileState.value?.copy(data = newList?.toList())
-    users = newList?.toList()
-    filteredUsers = newList?.toList()
-  }
-
-  private fun removeLoadingItem() {
-    val newList = filteredUsers?.toMutableList()
-    newList?.removeAt(newList.size - 1)
     userAndProfileState.value = userAndProfileState.value?.copy(data = newList?.toList())
     users = newList?.toList()
     filteredUsers = newList?.toList()
@@ -196,6 +185,11 @@ class MainViewModel(private val api: GitHubApi) : ViewModel() {
 
   fun clearProfile() {
     profileState.value = null
+  }
+
+  fun cancelJobs() {
+    viewModelScope.cancel()
+    currentDelay = initialDelay
   }
 
   companion object {

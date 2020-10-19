@@ -58,6 +58,11 @@ class UserListFragment : Fragment() {
     setObservers()
   }
 
+  override fun onPause() {
+    super.onPause()
+    viewModel.cancelJobs()
+  }
+
   private fun setObservers() {
     viewModel.getUsersState().onEach {
       if (it == null) return@onEach
