@@ -22,13 +22,15 @@ class UserRepository private constructor(
   private val profileLocalDataSource: ProfileDao
 ) {
 
-  fun getUsers(since: Int = 0) = performGetOperation(
+  fun getUsers() = userLocalDataSource.allWithProfile()
+
+  fun loadUsers(since: Int = 0) = performGetOperation(
     databaseQuery = { userLocalDataSource.allWithProfile() },
     networkCall = { remoteDataSource.getUsersSince(since) },
     saveCallResult = { userLocalDataSource.insert(it) }
   )
 
-  fun getProfile(userName: String) = channelFlow<Resource<Profile>> {
+  fun getProfile(userName: String) = channelFlow {
     send(Resource.loading())
     // db call
     launch {
@@ -67,9 +69,8 @@ class UserRepository private constructor(
   fun updateProfile(profile: Profile): Flow<Resource<Profile>> {
     val message = "Profile Updated!"
     return flow {
-      profileLocalDataSource.update(profile).run {
-        emit(Resource.success(profile, message))
-      }
+      profileLocalDataSource.update(profile)
+      emit(Resource.success(profile, message))
     }
   }
 

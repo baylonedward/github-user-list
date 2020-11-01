@@ -7,26 +7,22 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.kikimore.github_user_list.R
-import com.kikimore.github_user_list.main.MainViewModel
 import kotlinx.android.synthetic.main.layout_user_item.view.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 
 /**
  * Created by: ebaylon.
  * Created on: 28/08/2020.
  */
-@FlowPreview
 @ExperimentalCoroutinesApi
-class UserListAdapter(private val viewModel: MainViewModel) :
+class UserListAdapter(private val userListStrategy: UserListStrategy) :
   RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
   private var lastPosition = -1
 
   override fun getItemViewType(position: Int): Int {
-    return if (viewModel.getUser(position) == null) VIEW_TYPE_LOADING else VIEW_TYPE_ITEM
+    return if (userListStrategy.hasUser(position)) VIEW_TYPE_ITEM else VIEW_TYPE_LOADING
   }
 
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -45,12 +41,12 @@ class UserListAdapter(private val viewModel: MainViewModel) :
       is UserViewHolder -> {
         val adapterPosition = holder.adapterPosition
         holder.onBind(
-          viewModel.getAvatarUrl(adapterPosition),
-          viewModel.getUserName(adapterPosition),
-          viewModel.getDetails(adapterPosition),
-          viewModel.hasNote(adapterPosition),
-          viewModel.isFourth(adapterPosition),
-          viewModel.onClick(adapterPosition)
+          userListStrategy.getAvatarUrl(adapterPosition),
+          userListStrategy.getUserName(adapterPosition),
+          userListStrategy.getDetails(adapterPosition),
+          userListStrategy.hasNote(adapterPosition),
+          userListStrategy.isFourth(adapterPosition),
+          userListStrategy.onClick(adapterPosition)
         )
         // animate on first appearance
         if (position > lastPosition) {
@@ -70,7 +66,7 @@ class UserListAdapter(private val viewModel: MainViewModel) :
   }
 
   override fun getItemCount(): Int {
-    return viewModel.getUsersCount()
+    return userListStrategy.getUsersCount()
   }
 
   companion object {
@@ -78,7 +74,10 @@ class UserListAdapter(private val viewModel: MainViewModel) :
     private const val VIEW_TYPE_LOADING = 1
   }
 
-  class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+  /**
+   * ViewHolder for user item
+   */
+  private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     fun onBind(
       avatarUrl: String?,
       userName: String?,
@@ -122,5 +121,22 @@ class UserListAdapter(private val viewModel: MainViewModel) :
     }
   }
 
-  class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+  /**
+   * ViewHolder for loading item
+   */
+  private class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+  /**
+   * Interface for data supplier of UserListAdapter
+   */
+  interface UserListStrategy {
+    fun getUsersCount(): Int
+    fun hasUser(position: Int): Boolean
+    fun getUserName(position: Int): String?
+    fun getDetails(position: Int): String?
+    fun getAvatarUrl(position: Int): String?
+    fun hasNote(position: Int): Boolean
+    fun isFourth(position: Int): Boolean
+    fun onClick(position: Int): () -> Unit
+  }
 }

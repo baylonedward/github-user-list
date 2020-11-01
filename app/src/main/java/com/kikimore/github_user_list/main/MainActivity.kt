@@ -24,8 +24,7 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
     // observe selection to navigate
     viewModel.onSelect.onEach {
-      if (it == null) return@onEach
-      findNavController(R.id.nav_host_fragment).navigate(UserListFragmentDirections.navigationUserListToNavigationProfile())
+      if (it) findNavController(R.id.nav_host_fragment).navigate(UserListFragmentDirections.navigationUserListToNavigationProfile())
     }.launchIn(lifecycleScope)
   }
 }

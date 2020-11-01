@@ -16,10 +16,8 @@ import com.kikimore.github_user_list.main.MainViewModel
 import com.kikimore.github_user_list.utils.fetchViewModel
 import com.kikimore.github_user_list.utils.showSnackBar
 import com.kikimore.github_user_list.utils.showToast
-import kotlinx.android.synthetic.main.fragment_user_list.*
 import kotlinx.android.synthetic.main.fragment_user_list.view.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -29,7 +27,6 @@ import kotlinx.coroutines.launch
  * Created on: 11/09/2020.
  */
 @ExperimentalCoroutinesApi
-@FlowPreview
 class UserListFragment : Fragment() {
 
   private val api by lazy { GitHubApi.getInstance(requireActivity().application) }
@@ -40,6 +37,7 @@ class UserListFragment : Fragment() {
     super.onCreate(savedInstanceState)
     lifecycleScope.launch {
       viewModel.getUsers()
+      viewModel.observeSearch()
     }
   }
 
@@ -64,7 +62,7 @@ class UserListFragment : Fragment() {
   }
 
   private fun setObservers() {
-    viewModel.getUsersState().onEach {
+    viewModel.userAndProfileState.onEach {
       if (it == null) return@onEach
       when (it.status) {
         Resource.Status.SUCCESS -> {
@@ -82,7 +80,7 @@ class UserListFragment : Fragment() {
       }
     }.launchIn(lifecycleScope)
     // search result
-    viewModel.getSearchResult().onEach {
+    viewModel.searchResult.onEach {
       listAdapter.notifyDataSetChanged()
     }.launchIn(lifecycleScope)
     // has user

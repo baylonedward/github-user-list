@@ -53,13 +53,12 @@ class ProfileFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     setDefault()
-    viewModel.getProfileState().onEach {
+    viewModel.profileState.onEach {
       if (it == null) return@onEach
       when (it.status) {
         Resource.Status.SUCCESS -> {
           isLoading(false)
           it.data?.also { profile ->
-            disableNote(false)
             setContent(profile)
           }
           it.message?.also { message -> showToast(view.context, message) }
@@ -78,11 +77,6 @@ class ProfileFragment : Fragment() {
   override fun onDestroy() {
     super.onDestroy()
     viewModel.clearProfile()
-  }
-
-  override fun onPause() {
-    super.onPause()
-    viewModel.cancelJobs()
   }
 
   private fun setDefault() {
@@ -111,7 +105,9 @@ class ProfileFragment : Fragment() {
     blogTextView.text = "Blog:"
     // save button
     saveButton.setOnClickListener {
-      viewModel.saveNote(noteEditText.text.toString())
+      lifecycleScope.launch {
+        viewModel.saveNote(noteEditText.text.toString())
+      }
     }
     // disable note
     disableNote(true)
@@ -138,6 +134,8 @@ class ProfileFragment : Fragment() {
     blogTextView.text = "Blog: ${profile.blog}"
     // notes
     noteEditText.setText(profile.note)
+    // enable save button
+    disableNote(false)
   }
 
   private fun disableNote(bool: Boolean) {
